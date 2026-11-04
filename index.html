@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartTraffic AI - Gestão Inteligente & Acessibilidade Urbana</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        tech: ['Rajdhani', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#070A11',
+                            card: '#0F172A',
+                            border: '#1E293B',
+                            emerald: '#10B981',
+                            amber: '#F59E0B',
+                            rose: '#EF4444',
+                            cyan: '#06B6D4',
+                            purple: '#A855F7'
+                        }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'scan-line': 'scanLine 2.2s linear infinite alternate',
+                        'radar-sweep': 'radarSweep 4s linear infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '1', boxShadow: '0 0 20px currentColor' },
+                            '50%': { opacity: '0.4', boxShadow: '0 0 5px currentColor' },
+                        },
+                        scanLine: {
+                            '0%': { top: '0%' },
+                            '100%': { top: '92%' },
+                        },
+                        radarSweep: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .led-red.active {
+            background-color: #ef4444;
+            box-shadow: 0 0 35px #ef4444, 0 0 15px #ef4444;
+        }
+        .led-yellow.active {
+            background-color: #f59e0b;
+            box-shadow: 0 0 35px #f59e0b, 0 0 15px #f59e0b;
+        }
+        .led-green.active {
+            background-color: #10b981;
+            box-shadow: 0 0 35px #10b981, 0 0 15px #10b981;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070a11;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+    </style>
+</head>
+<body class="bg-[#070A11] text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black">
+
+    <!-- CONTAINER DE NOTIFICAÇÕES TOAST -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
+
+    <!-- NAVBAR / CABEÇALHO -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+           
+            <!-- Logo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('home')">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-emerald-400 p-[2px] shadow-lg shadow-cyan-500/20">
+                    <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                        <i class="fa-solid fa-person-walking-arrow-loop-left text-cyan-400 text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-cyan-400 bg-clip-text text-transparent">
+                        SmartTraffic <span class="text-cyan-400 font-black">AI</span>
+                    </span>
+                    <span class="block text-[10px] font-tech text-slate-400 uppercase tracking-widest">Acessibilidade & Semáforos Inteligentes</span>
+                </div>
+            </div>
+
+            <!-- Navegação Desktop -->
+            <nav class="hidden lg:flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-full border border-slate-800">
+                <button id="nav-home" onclick="navigateTo('home')" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold transition-all text-cyan-400 bg-cyan-500/10 border border-cyan-500/30">
+                    <i class="fa-solid fa-house mr-1.5"></i>Início
+                </button>
+                <button id="nav-cadastro" onclick="navigateTo('cadastro')" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <i class="fa-solid fa-id-card mr-1.5"></i>Cadastro Pessoa Física
+                </button>
+                <button id="nav-pedestre" onclick="navigateTo('pedestre')" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <i class="fa-solid fa-person-walking-with-cane mr-1.5"></i>Faixa de Pedestre IA
+                </button>
+                <button id="nav-contato" onclick="navigateTo('contato')" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <i class="fa-solid fa-headset mr-1.5"></i>Contato
+                </button>
+                <button id="nav-feedback" onclick="navigateTo('feedback')" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+                    <i class="fa-solid fa-comments mr-1.5"></i>Feedback
+                </button>
+            </nav>
+
+            <!-- Status do Sistema & Mobile Trigger -->
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-xs font-mono text-cyan-400">
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                    <span>VISÃO IA: ONLINE</span>
+                </div>
+
+                <button onclick="toggleMobileMenu()" class="lg:hidden p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white focus:outline-none">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Drawer -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-slate-900 border-b border-slate-800 px-4 pt-3 pb-6 space-y-2">
+            <button onclick="navigateTo('home'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-house text-cyan-400 w-5"></i>Início
+            </button>
+            <button onclick="navigateTo('cadastro'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-id-card text-emerald-400 w-5"></i>Cadastro Pessoa Física
+            </button>
+            <button onclick="navigateTo('pedestre'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-person-walking-with-cane text-amber-400 w-5"></i>Faixa de Pedestre IA
+            </button>
+            <button onclick="navigateTo('contato'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-headset text-blue-400 w-5"></i>Contato
+            </button>
+            <button onclick="navigateTo('feedback'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-comments text-purple-400 w-5"></i>Feedback
+            </button>
+        </div>
+    </header>
+
+    <!-- ÁREA CENTRAL (SPA CONTAINERS) -->
+    <main class="flex-grow">
+
+        <!-- ================= PAGE 1: HOME ================= -->
+        <section id="view-home" class="app-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+           
+            <!-- Hero Banner Futurista -->
+            <div class="relative rounded-3xl p-8 sm:p-12 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900/90 to-[#070A11] border border-slate-800 shadow-2xl">
+                <!-- Background visual elements -->
+                <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:2.5rem_2.5rem] pointer-events-none"></div>
+                <div class="absolute -top-20 -right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                   
+                    <div class="lg:col-span-7 space-y-6">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-cyan-400 text-xs font-semibold uppercase tracking-wider font-tech">
+                            <i class="fa-solid fa-microchip text-sm"></i> Visão Computacional para Cidades Acessíveis
+                        </div>
+
+                        <h1 class="text-3xl sm:text-5xl font-black text-white leading-tight">
+                            Semáforos Adaptativos com <span class="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Prioridade Humana Real</span>
+                        </h1>
+
+                        <p class="text-slate-300 text-base leading-relaxed">
+                            O SmartTraffic AI protege pedestres com mobilidade reduzida, idosos e cadeirantes através do escaneamento facial e detecção preditiva na faixa de pedestre. Semáforos que respondem às necessidades das pessoas em tempo real.
+                        </p>
+
+                        <div class="flex flex-wrap items-center gap-3 pt-2">
+                            <button onclick="navigateTo('cadastro')" class="px-6 py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 shadow-lg shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 text-sm">
+                                <i class="fa-solid fa-camera"></i> Cadastrar Biometria Facial
+                            </button>
+                            <button onclick="navigateTo('pedestre')" class="px-6 py-3.5 rounded-xl font-semibold text-slate-200 bg-slate-800/90 hover:bg-slate-800 border border-slate-700 transition-all flex items-center gap-2 text-sm">
+                                <i class="fa-solid fa-eye text-amber-400"></i> Ver Detector da Faixa
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Dinâmico em Tempo Real -->
+                    <div class="lg:col-span-5 bg-slate-950/80 border border-slate-800/90 rounded-2xl p-6 space-y-5 shadow-2xl">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <span class="text-xs font-tech font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line"></i> Métricas em Tempo Real
+                            </span>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">REDE ATIVA</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-400 block font-medium">Fluxo de Trânsito</span>
+                                <span id="stat-fluxo" class="text-2xl font-black text-white font-tech">1.480 v/h</span>
+                                <span class="text-[10px] text-emerald-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-arrow-trend-up"></i> +14% fluidez</span>
+                            </div>
+
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-400 block font-medium">Tempo de Espera Reduzido</span>
+                                <span id="stat-espera" class="text-2xl font-black text-cyan-400 font-tech">-42.5%</span>
+                                <span class="text-[10px] text-cyan-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-clock"></i> Otimização IA</span>
+                            </div>
+
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-400 block font-medium">Pedestres Priorizados</span>
+                                <span id="stat-pedestres" class="text-2xl font-black text-amber-400 font-tech">3.892</span>
+                                <span class="text-[10px] text-amber-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-person-walking"></i> Hoje nas faixas</span>
+                            </div>
+
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-400 block font-medium">Precisão Biométrica</span>
+                                <span class="text-2xl font-black text-purple-400 font-tech">99.8%</span>
+                                <span class="text-[10px] text-purple-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-shield-halved"></i> Reconhecimento</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SIMULADOR RÁPIDO DO SEMÁFORO INTELIGENTE -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-traffic-light text-cyan-400"></i> Simulador Rápido de Ciclo Adaptativo
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Veja como a inteligência artificial controla os tempos de fase do semáforo urbano.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">Modo:</span>
+                        <button id="btn-toggle-sim-mode" onclick="toggleSimMode()" class="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                            AUTOMÁTICO (IA)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                   
+                    <!-- Semáforo Visual -->
+                    <div class="md:col-span-4 flex flex-col items-center justify-center">
+                        <div class="w-36 bg-slate-950 p-4 rounded-3xl border-4 border-slate-800 shadow-2xl flex flex-col items-center gap-4">
+                           
+                            <!-- Vermelho -->
+                            <div id="home-led-red" class="led-red w-16 h-16 rounded-full bg-red-950/40 border border-red-900/50 flex items-center justify-center transition-all duration-300">
+                                <i class="fa-solid fa-hand text-red-950 text-xl"></i>
+                            </div>
+
+                            <!-- Amarelo -->
+                            <div id="home-led-yellow" class="led-yellow w-16 h-16 rounded-full bg-amber-950/40 border border-amber-900/50 flex items-center justify-center transition-all duration-300">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-950 text-xl"></i>
+                            </div>
+
+                            <!-- Verde -->
+                            <div id="home-led-green" class="led-green w-16 h-16 rounded-full bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center transition-all duration-300 active">
+                                <i class="fa-solid fa-car text-emerald-200 text-xl"></i>
+                            </div>
+
+                        </div>
+
+                        <div class="mt-4 text-center">
+                            <span class="text-xs font-mono text-slate-400 block">TEMPO RESTANTE</span>
+                            <span id="home-sim-timer" class="text-3xl font-black font-tech text-emerald-400">12s</span>
+                        </div>
+                    </div>
+
+                    <!-- Controles e Log de Decisão -->
+                    <div class="md:col-span-8 space-y-4">
+                        <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs space-y-2">
+                            <div class="text-slate-500 flex justify-between border-b border-slate-800 pb-1">
+                                <span>DECISÕES DA IA DO CRUZAMENTO</span>
+                                <span class="text-cyan-400">STATUS: ATIVO</span>
+                            </div>
+                            <p id="home-sim-log" class="text-emerald-400">
+                                > IA: Fluxo viário moderado na Av. Principal. Mantendo fase verde para otimizar tempo.
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <button onclick="forceSimColor('RED')" class="px-4 py-2 rounded-xl bg-red-950/60 border border-red-500/40 text-red-300 font-semibold text-xs hover:bg-red-900/50 transition-all">
+                                Forçar Vermelho (Pare)
+                            </button>
+                            <button onclick="forceSimColor('YELLOW')" class="px-4 py-2 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-300 font-semibold text-xs hover:bg-amber-900/50 transition-all">
+                                Forçar Amarelo (Atenção)
+                            </button>
+                            <button onclick="forceSimColor('GREEN')" class="px-4 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-semibold text-xs hover:bg-emerald-900/50 transition-all">
+                                Forçar Verde (Siga)
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CARDS DE ACESSO RÁPIDO PARA AS ÁREAS DO SITE -->
+            <div class="space-y-4">
+                <h2 class="text-2xl font-black text-white">Módulos da Plataforma</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                   
+                    <!-- Card 1: Cadastro Pessoa Física -->
+                    <div onclick="navigateTo('cadastro')" class="glass-panel p-6 rounded-3xl border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition-all hover:-translate-y-1 group">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-xl mb-4 group-hover:bg-cyan-500 group-hover:text-black transition-all">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">Cadastro Pessoa Física</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Cadastre seu CPF e faça o escaneamento facial via webcam real para identificação prioritária em travessias.
+                        </p>
+                        <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-cyan-400">
+                            <span>Acessar Câmera</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Faixa de Pedestre IA -->
+                    <div onclick="navigateTo('pedestre')" class="glass-panel p-6 rounded-3xl border border-slate-800 hover:border-amber-500/50 cursor-pointer transition-all hover:-translate-y-1 group">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl mb-4 group-hover:bg-amber-500 group-hover:text-black transition-all">
+                            <i class="fa-solid fa-person-walking-with-cane"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">Faixa de Pedestre IA</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Simulação e detecção em tempo real de idosos, cadeirantes e pedestres na faixa com extensão automática do tempo verde.
+                        </p>
+                        <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                            <span>Ver Detector da Faixa</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Contato -->
+                    <div onclick="navigateTo('contato')" class="glass-panel p-6 rounded-3xl border border-slate-800 hover:border-emerald-500/50 cursor-pointer transition-all hover:-translate-y-1 group">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl mb-4 group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">Contato & Órgãos</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Atendimento para prefeituras, DETRANs, secretarias de mobilidade urbana e suporte técnico de engenharia.
+                        </p>
+                        <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                            <span>Falar com Engenharia</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Feedback -->
+                    <div onclick="navigateTo('feedback')" class="glass-panel p-6 rounded-3xl border border-slate-800 hover:border-purple-500/50 cursor-pointer transition-all hover:-translate-y-1 group">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xl mb-4 group-hover:bg-purple-500 group-hover:text-black transition-all">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white group-hover:text-purple-400 transition-colors">Feedback & Avaliações</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Envie sugestões de melhoria em cruzamentos do seu bairro e avalie a segurança nas faixas da cidade.
+                        </p>
+                        <div class="mt-4 flex items-center gap-1.5 text-xs font-bold text-purple-400">
+                            <span>Enviar Avaliação</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= PAGE 2: CADASTRO PESSOA FÍSICA (WEBRTC WEBCAM REAL) ================= -->
+        <section id="view-cadastro" class="app-view hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+           
+            <div class="border-b border-slate-800 pb-6">
+                <span class="text-xs font-tech text-cyan-400 uppercase tracking-widest font-semibold">Identificação Facial Biométrica</span>
+                <h2 class="text-3xl font-extrabold text-white mt-1">Cadastro de Pessoa Física & Perfil de Acessibilidade</h2>
+                <p class="text-slate-400 text-sm mt-1">Cadastre seus dados e biometria para ser reconhecido automaticamente pelas câmeras do semáforo inteligente.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+               
+                <!-- WEBCAM REAL COM SOBREPOSIÇÃO HUD DE IA -->
+                <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-2xl relative">
+                    <div>
+                        <div class="flex justify-between items-center text-xs font-mono text-slate-400 mb-3">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-video text-cyan-400"></i> FEED DE CÂMERA WEBRTC</span>
+                            <span id="webcam-status-indicator" class="text-amber-400">● AGUARDANDO ATIVAÇÃO</span>
+                        </div>
+
+                        <!-- Video / Frame Container -->
+                        <div class="relative w-full h-72 bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden flex items-center justify-center">
+                           
+                            <!-- Video WebRTC Real -->
+                            <video id="webcam-video" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
+
+                            <!-- Frame Render Foto Snapshot -->
+                            <img id="photo-preview" class="hidden w-full h-full object-cover" alt="Biometria Capturada">
+
+                            <!-- Canvas para processar e capturar imagem -->
+                            <canvas id="photo-canvas" class="hidden"></canvas>
+
+                            <!-- Placeholder Inicial -->
+                            <div id="webcam-placeholder" class="text-center p-6 space-y-3">
+                                <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 mx-auto flex items-center justify-center text-slate-500 text-2xl">
+                                    <i class="fa-solid fa-user-shield"></i>
+                                </div>
+                                <p class="text-xs text-slate-400">Clique em "Ativar Câmera" para permitir acesso à sua Webcam e realizar o scan biométrico.</p>
+                            </div>
+
+                            <!-- Sobreposição de HUD Cibernético / Moldura de Escaneamento -->
+                            <div id="camera-hud" class="hidden pointer-events-none absolute inset-0 border-2 border-cyan-500/40 m-4 rounded-xl">
+                                <div class="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-cyan-400"></div>
+                                <div class="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-cyan-400"></div>
+                                <div class="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-cyan-400"></div>
+                                <div class="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-cyan-400"></div>
+                               
+                                <div class="w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent absolute animate-scan-line shadow-[0_0_15px_#06b6d4]"></div>
+                               
+                                <div class="absolute bottom-2 left-2 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] font-mono text-cyan-400">
+                                    MÁSCARA FACIAL: DETECTANDO
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Controle da Câmera -->
+                    <div class="space-y-3 mt-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" onclick="startWebcam()" class="py-3 px-3 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-semibold text-xs hover:bg-cyan-900/50 transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-power-off"></i> Ativar Câmera
+                            </button>
+                            <button type="button" onclick="capturePhoto()" class="py-3 px-3 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-camera"></i> Capturar Foto
+                            </button>
+                        </div>
+
+                        <!-- Fallback para Upload de Foto -->
+                        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Sem câmera?</span>
+                            <label class="cursor-pointer text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-upload"></i> Carregar Imagem
+                                <input type="file" id="fallback-file-input" accept="image/*" onchange="handleFileUpload(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORMULÁRIO DE CADASTRO -->
+                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+                    <h3 class="text-lg font-bold text-white border-b border-slate-800 pb-3">Dados Pessoais do Cidadão</h3>
+
+                    <form id="form-cadastro-pf" onsubmit="salvarPessoaFisica(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Nome Completo</label>
+                            <input type="text" id="pf-nome" required placeholder="Ex: Ana Maria Gonçalves" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">CPF</label>
+                                <input type="text" id="pf-cpf" required maxlength="14" placeholder="000.000.000-00" oninput="mascaraCPF(this)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-cyan-500 transition-colors">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Data de Nascimento</label>
+                                <input type="date" id="pf-nascimento" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Perfil / Categoria de Prioridade Especial</label>
+                            <select id="pf-categoria" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors">
+                                <option value="Pedestre Geral">Pedestre Geral (Prioridade Padrão)</option>
+                                <option value="Idoso (60+ anos)">Idoso (60+ anos - Tempo Adicional)</option>
+                                <option value="Pessoa com Deficiência / Cadeirante">Pessoa com Deficiência / Cadeirante (Prioridade Máxima)</option>
+                                <option value="Deficiente Visual">Deficiente Visual (Aviso Sonoro + Tempo Extendido)</option>
+                                <option value="Gestante / Lactante">Gestante / Lactante</option>
+                                <option value="Condutor de Emergência (SAMU / Bombeiros)">Condutor de Emergência (SAMU / Bombeiros)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-check"></i> Finalizar Cadastro e Gravar Biometria
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- TABELA DE PESSOAS CADASTRADAS COM FILTRO E LOCALSTORAGE -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-users text-cyan-400"></i> Pessoas Cadastradas no Sistema SmartTraffic
+                    </h3>
+
+                    <!-- Filtro por CPF ou Nome -->
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                        <input type="text" id="filter-input" oninput="filtrarCadastrados()" placeholder="Buscar por Nome ou CPF..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase font-mono border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Foto</th>
+                                <th class="p-3">Nome Completo</th>
+                                <th class="p-3">CPF</th>
+                                <th class="p-3">Categoria</th>
+                                <th class="p-3">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-pf-tbody" class="divide-y divide-slate-800/60">
+                            <!-- Inserido dinamicamente via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= PAGE 3: FAIXA DE PEDESTRE IA (DETECTOR E ESCANEAMENTO) ================= -->
+        <section id="view-pedestre" class="app-view hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+           
+            <div class="border-b border-slate-800 pb-6">
+                <span class="text-xs font-tech text-amber-400 uppercase tracking-widest font-semibold">Módulo Operacional de Faixa Inteligente</span>
+                <h2 class="text-3xl font-extrabold text-white mt-1">Escaneamento & Visão Computacional da Faixa de Pedestre</h2>
+                <p class="text-slate-400 text-sm mt-1">A IA monitora a faixa de pedestre em tempo real, detectando idosos, cadeirantes e pessoas com necessidades especiais para adaptar os tempos dos semáforos.</p>
+            </div>
+
+            <!-- PAINEL PRINCIPAL DO DETECTOR DA FAIXA -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+               
+                <!-- CANVAS DO FEED DA FAIXA DE PEDESTRE -->
+                <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                    <div class="flex justify-between items-center text-xs font-mono text-slate-400 border-b border-slate-800 pb-3">
+                        <span class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                            CAM-CROSSWALK #01 • CRUZAMENTO AV. PAULISTA X REBOUÇAS
+                        </span>
+                        <span id="detection-count-badge" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">0 DETECÇÕES</span>
+                    </div>
+
+                    <!-- Canvas do Detector Visual -->
+                    <div class="relative w-full h-[360px] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                        <canvas id="crosswalk-canvas" class="w-full h-full block"></canvas>
+
+                        <!-- Banner de Alerta do Algoritmo Adaptativo -->
+                        <div id="crosswalk-alert-banner" class="hidden absolute top-4 left-4 right-4 bg-amber-500/90 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between text-xs sm:text-sm animate-bounce">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                                <span id="crosswalk-alert-text">PEDESTRE PRIORITÁRIO DETECTADO! EXTENDENDO SINAL VERDE!</span>
+                            </span>
+                            <span class="font-mono underline">IA ADAPTATIVA</span>
+                        </div>
+                    </div>
+
+                    <!-- INJEÇÃO INTERATIVA DE PEDESTRES NA FAIXA -->
+                    <div class="space-y-2 pt-2">
+                        <label class="block text-xs font-mono font-bold text-slate-400 uppercase">Simular Injeção de Pedestres na Faixa:</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                            <button onclick="injectPedestrian('IDOSO')" class="py-2.5 px-3 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-300 font-semibold text-xs hover:bg-amber-900/50 transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-person-cane"></i> + Idoso
+                            </button>
+
+                            <button onclick="injectPedestrian('CADEIRANTE')" class="py-2.5 px-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 font-semibold text-xs hover:bg-rose-900/50 transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-wheelchair"></i> + Cadeirante
+                            </button>
+
+                            <button onclick="injectPedestrian('CEGO')" class="py-2.5 px-3 rounded-xl bg-purple-950/60 border border-purple-500/40 text-purple-300 font-semibold text-xs hover:bg-purple-900/50 transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-eye-slash"></i> + Defic. Visual
+                            </button>
+
+                            <button onclick="injectPedestrian('NORMAL')" class="py-2.5 px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-person"></i> + Comum
+                            </button>
+
+                            <button onclick="clearCrosswalk()" class="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 font-semibold text-xs hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5 col-span-2 sm:col-span-1">
+                                <i class="fa-solid fa-broom"></i> Limpar Faixa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DE CONTROLE DOS SEMÁFOROS DA FAIXA -->
+                <div class="lg:col-span-4 space-y-6 flex flex-col justify-between">
+                   
+                    <!-- Status dos Semáforos Sincronizados -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6">
+                        <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3">Sinalização da Faixa & Veículos</h3>
+
+                        <!-- Semáforo dos Carros vs Pedestres -->
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                           
+                            <!-- Carros -->
+                            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+                                <span class="text-[11px] font-mono text-slate-400 block">CARROS</span>
+                                <div id="ped-car-light" class="w-12 h-12 rounded-full mx-auto bg-red-500 border-2 border-red-300 shadow-[0_0_20px_#ef4444] flex items-center justify-center text-slate-950 text-xl font-bold">
+                                    <i class="fa-solid fa-hand"></i>
+                                </div>
+                                <span id="ped-car-status" class="text-xs font-bold text-red-400 block">SINAL VERMELHO</span>
+                            </div>
+
+                            <!-- Pedestres -->
+                            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+                                <span class="text-[11px] font-mono text-slate-400 block">PEDESTRES</span>
+                                <div id="ped-user-light" class="w-12 h-12 rounded-full mx-auto bg-emerald-500 border-2 border-emerald-300 shadow-[0_0_20px_#10b981] flex items-center justify-center text-slate-950 text-xl font-bold">
+                                    <i class="fa-solid fa-person-walking"></i>
+                                </div>
+                                <span id="ped-user-status" class="text-xs font-bold text-emerald-400 block">TRAVESSIA LIBERADA</span>
+                            </div>
+
+                        </div>
+
+                        <!-- Timer Adaptativo em Tempo Real -->
+                        <div class="bg-slate-950 py-4 px-6 rounded-2xl border border-slate-800 text-center">
+                            <span class="text-xs font-mono text-slate-400 block">TEMPO DE TRAVESSIA ADAPTATIVO</span>
+                            <span id="crosswalk-timer" class="text-5xl font-black font-tech text-amber-400">30s</span>
+                            <span class="text-[10px] text-slate-500 block mt-1 font-mono">Ajustado dinamicamente pela IA</span>
+                        </div>
+                    </div>
+
+                    <!-- Log do Detector de Faixa -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-3xl p-4 font-mono text-xs space-y-1 text-slate-300">
+                        <div class="text-slate-500 flex justify-between border-b border-slate-800 pb-1">
+                            <span>LOG DA FAIXA INTELIGENTE</span>
+                            <span class="text-amber-400">EVENTOS</span>
+                        </div>
+                        <div id="crosswalk-log-container" class="space-y-1 max-h-36 overflow-y-auto text-[11px]">
+                            <p class="text-slate-500">> Sistema iniciado. Monitorando faixa de pedestre...</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ================= PAGE 4: CONTATO ================= -->
+        <section id="view-contato" class="app-view hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+           
+            <div class="border-b border-slate-800 pb-6">
+                <span class="text-xs font-tech text-emerald-400 uppercase tracking-widest font-semibold">Central de Atendimento</span>
+                <h2 class="text-3xl font-extrabold text-white mt-1">Contato com Engenharia & Prefeituras</h2>
+                <p class="text-slate-400 text-sm mt-1">Fale diretamente com os responsáveis pela implementação dos semáforos e suporte técnico.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+               
+                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+                    <form id="form-contato" onsubmit="enviarContato(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Nome Completo</label>
+                                <input type="text" required placeholder="Ex: Roberto Mendes" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">E-mail</label>
+                                <input type="email" required placeholder="Ex: roberto@cidade.gov.br" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Órgão / Cidade / Município</label>
+                                <input type="text" placeholder="Ex: Prefeitura de Curitiba - SETRAN" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Assunto</label>
+                                <select class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                                    <option>Implementação de Semáforos com Acessibilidade</option>
+                                    <option>Suporte Técnico de Câmeras Biométricas</option>
+                                    <option>Solicitação de Ajuste em Cruzamento do Bairro</option>
+                                    <option>Outros Assuntos</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Mensagem</label>
+                            <textarea rows="4" required placeholder="Descreva os detalhes da solicitação ou problema..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Enviar Mensagem para a Central
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                        <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3">Canais de Atendimento Urgente</h3>
+
+                        <div class="space-y-4 text-sm">
+                            <div class="flex items-start gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-phone"></i>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-white">Telefone Único de Suporte</span>
+                                    <span class="text-slate-400 font-mono">0800 777 SMART (76278)</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-envelope"></i>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-white">E-mail Oficial</span>
+                                    <span class="text-slate-400 font-mono">mobilidade@smarttraffic.ai</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-building-flag"></i>
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-white">Centro de Engenharia Viária</span>
+                                    <span class="text-slate-400">Av. Paulista, 1000 - São Paulo/SP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ================= PAGE 5: FEEDBACK DOS CIDADÃOS ================= -->
+        <section id="view-feedback" class="app-view hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+           
+            <div class="border-b border-slate-800 pb-6">
+                <span class="text-xs font-tech text-purple-400 uppercase tracking-widest font-semibold">Participação Cidadã</span>
+                <h2 class="text-3xl font-extrabold text-white mt-1">Feedback Cidadão & Avaliação das Faixas</h2>
+                <p class="text-slate-400 text-sm mt-1">Avalie a precisão dos semáforos inteligência no seu bairro e ajude nosso algoritmo a evoluir.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+               
+                <!-- Formulário de Feedback -->
+                <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6">
+                    <h3 class="text-lg font-bold text-white border-b border-slate-800 pb-3">Enviar sua Avaliação</h3>
+
+                    <form id="form-feedback" onsubmit="salvarFeedback(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Seu Nome / Apelido</label>
+                            <input type="text" id="fb-nome" required placeholder="Ex: Carlos Eduardo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Cruzamento ou Bairro</label>
+                            <input type="text" id="fb-local" required placeholder="Ex: Av. Faria Lima x Rebouças" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Categoria do Feedback</label>
+                            <select id="fb-categoria" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors">
+                                <option value="Elogio">Elogio ao Tempo Verde</option>
+                                <option value="Sugestão de Tempo">Sugestão de Tempo de Travessia</option>
+                                <option value="Alerta de Segurança">Alerta de Segurança na Faixa</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Sua Nota (1 a 5 Estrelas)</label>
+                            <div class="flex items-center gap-2 text-2xl text-slate-700 py-1" id="star-rating-container">
+                                <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition-colors" onclick="setRating(1)"></i>
+                                <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition-colors" onclick="setRating(2)"></i>
+                                <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition-colors" onclick="setRating(3)"></i>
+                                <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition-colors" onclick="setRating(4)"></i>
+                                <i class="fa-solid fa-star cursor-pointer hover:text-amber-400 transition-colors" onclick="setRating(5)"></i>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Comentário</label>
+                            <textarea id="fb-comentario" rows="3" required placeholder="Conte sua experiência com o semáforo inteligente..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-purple-400 to-indigo-400 hover:from-purple-300 hover:to-indigo-300 transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-star"></i> Publicar Avaliação
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Feed de Avaliações com Filtro e Upvotes -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-purple-400"></i> Avaliações Recentes dos Cidadãos
+                        </h3>
+
+                        <!-- Filtro por Categoria -->
+                        <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+                            <button onclick="filtrarFeedbackCat('TODOS')" class="fb-cat-btn px-2.5 py-1 rounded-lg font-medium text-purple-400 bg-purple-500/10">Todos</button>
+                            <button onclick="filtrarFeedbackCat('Elogio')" class="fb-cat-btn px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">Elogios</button>
+                            <button onclick="filtrarFeedbackCat('Sugestão de Tempo')" class="fb-cat-btn px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">Sugestões</button>
+                            <button onclick="filtrarFeedbackCat('Alerta de Segurança')" class="fb-cat-btn px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">Alertas</button>
+                        </div>
+                    </div>
+
+                    <div id="feedback-list-container" class="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+                        <!-- Inserido dinamicamente via Javascript -->
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER / RODAPÉ -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-10 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                    <i class="fa-solid fa-person-walking-arrow-loop-left"></i>
+                </div>
+                <div>
+                    <span class="font-extrabold text-white">SmartTraffic AI</span>
+                    <p class="text-xs text-slate-500">© 2026 SmartTraffic AI Inc. Tecnologia Humanizada de Trânsito.</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400">
+                <button onclick="navigateTo('home')" class="hover:text-cyan-400 transition-colors">Início</button>
+                <button onclick="navigateTo('cadastro')" class="hover:text-cyan-400 transition-colors">Cadastro Pessoa Física</button>
+                <button onclick="navigateTo('pedestre')" class="hover:text-amber-400 transition-colors">Faixa de Pedestre IA</button>
+                <button onclick="navigateTo('contato')" class="hover:text-emerald-400 transition-colors">Contato</button>
+                <button onclick="navigateTo('feedback')" class="hover:text-purple-400 transition-colors">Feedback</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LÓGICA JAVASCRIPT COMPLETA DA SPA -->
+    <script>
+        /* ==========================================================================
+           1. ESTADO GLOBAL E ROTEAMENTO SPA
+           ========================================================================== */
+        let activePage = 'home';
+        let currentRating = 5;
+        let webcamStream = null;
+        let activeFeedbackCategory = 'TODOS';
+
+        function navigateTo(pageId) {
+            document.querySelectorAll('.app-view').forEach(view => view.classList.add('hidden'));
+           
+            const targetView = document.getElementById(`view-${pageId}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                activePage = pageId;
+            }
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-cyan-400', 'bg-cyan-500/10', 'border', 'border-cyan-500/30');
+                btn.classList.add('text-slate-300');
+            });
+
+            const activeNavBtn = document.getElementById(`nav-${pageId}`);
+            if (activeNavBtn) {
+                activeNavBtn.classList.remove('text-slate-300');
+                activeNavBtn.classList.add('text-cyan-400', 'bg-cyan-500/10', 'border', 'border-cyan-500/30');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Inicia canvas da faixa se navegar para pedestre
+            if (pageId === 'pedestre') {
+                initCrosswalkCanvas();
+            }
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        /* ==========================================================================
+           2. SISTEMA DE TOAST NOTIFICAÇÕES
+           ========================================================================== */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+           
+            let iconClass = 'fa-circle-info text-cyan-400';
+            let borderColor = 'border-cyan-500/40';
+
+            if (type === 'success') {
+                iconClass = 'fa-circle-check text-emerald-400';
+                borderColor = 'border-emerald-500/40';
+            } else if (type === 'warning') {
+                iconClass = 'fa-triangle-exclamation text-amber-400';
+                borderColor = 'border-amber-500/40';
+            } else if (type === 'emergency') {
+                iconClass = 'fa-person-walking-with-cane text-rose-400 animate-pulse';
+                borderColor = 'border-rose-500/60';
+            }
+
+            toast.className = `pointer-events-auto bg-slate-900/95 border ${borderColor} text-slate-100 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs sm:text-sm font-medium transition-all duration-300 transform translate-y-4 opacity-0`;
+            toast.innerHTML = `
+                <i class="fa-solid ${iconClass} text-lg"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        /* ==========================================================================
+           3. SIMULADOR DA HOME & MÉTRICAS
+           ========================================================================== */
+        let homeSimState = 'GREEN';
+        let homeSimTimer = 12;
+        let isSimAuto = true;
+
+        setInterval(() => {
+            // Atualiza métricas leves dinâmicas da home
+            const fluxEl = document.getElementById('stat-fluxo');
+            if (fluxEl) {
+                const randomFlux = 1450 + Math.floor(Math.random() * 80);
+                fluxEl.innerText = `${randomFlux.toLocaleString()} v/h`;
+            }
+        }, 3000);
+
+        setInterval(() => {
+            if (!isSimAuto) return;
+            homeSimTimer--;
+            const timerEl = document.getElementById('home-sim-timer');
+            if (timerEl) timerEl.innerText = `${homeSimTimer}s`;
+
+            if (homeSimTimer <= 0) {
+                if (homeSimState === 'GREEN') {
+                    homeSimState = 'YELLOW';
+                    homeSimTimer = 3;
+                } else if (homeSimState === 'YELLOW') {
+                    homeSimState = 'RED';
+                    homeSimTimer = 10;
+                } else {
+                    homeSimState = 'GREEN';
+                    homeSimTimer = 14;
+                }
+                updateHomeSimVisuals();
+            }
+        }, 1000);
+
+        function updateHomeSimVisuals() {
+            const ledRed = document.getElementById('home-led-red');
+            const ledYellow = document.getElementById('home-led-yellow');
+            const ledGreen = document.getElementById('home-led-green');
+            const logEl = document.getElementById('home-sim-log');
+
+            if (!ledRed) return;
+
+            ledRed.classList.remove('active');
+            ledYellow.classList.remove('active');
+            ledGreen.classList.remove('active');
+
+            if (homeSimState === 'GREEN') {
+                ledGreen.classList.add('active');
+                logEl.innerText = '> IA: Fase VERDE ativada. Fluxo fluindo normalmente.';
+            } else if (homeSimState === 'YELLOW') {
+                ledYellow.classList.add('active');
+                logEl.innerText = '> IA: Fase AMARELA. Desaceleração gradual na Av. Principal.';
+            } else if (homeSimState === 'RED') {
+                ledRed.classList.add('active');
+                logEl.innerText = '> IA: Fase VERMELHA. Travessia de pedestres liberada.';
+            }
+        }
+
+        function toggleSimMode() {
+            isSimAuto = !isSimAuto;
+            const btn = document.getElementById('btn-toggle-sim-mode');
+            if (isSimAuto) {
+                btn.innerText = 'AUTOMÁTICO (IA)';
+                btn.className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+                showToast('Simulador em modo automático com IA.', 'info');
+            } else {
+                btn.innerText = 'MANUAL (OVERRIDE)';
+                btn.className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                showToast('Modo manual ativado. Você controla as luzes.', 'warning');
+            }
+        }
+
+        function forceSimColor(color) {
+            isSimAuto = false;
+            document.getElementById('btn-toggle-sim-mode').innerText = 'MANUAL (OVERRIDE)';
+            homeSimState = color;
+            homeSimTimer = color === 'YELLOW' ? 3 : 15;
+            document.getElementById('home-sim-timer').innerText = `${homeSimTimer}s`;
+            updateHomeSimVisuals();
+            showToast(`Fase forçada manualmente para ${color}.`, 'info');
+        }
+
+        /* ==========================================================================
+           4. WEBRTC WEBCAM REAL & MÁSCARA CPF
+           ========================================================================== */
+        function mascaraCPF(input) {
+            let v = input.value.replace(/\D/g, '');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            input.value = v;
+        }
+
+        async function startWebcam() {
+            const video = document.getElementById('webcam-video');
+            const placeholder = document.getElementById('webcam-placeholder');
+            const preview = document.getElementById('photo-preview');
+            const hud = document.getElementById('camera-hud');
+            const badge = document.getElementById('webcam-status-indicator');
+
+            try {
+                if (webcamStream) {
+                    webcamStream.getTracks().forEach(track => track.stop());
+                }
+
+                webcamStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+                });
+
+                video.srcObject = webcamStream;
+                video.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                preview.classList.add('hidden');
+                hud.classList.remove('hidden');
+
+                badge.innerText = '● CÂMERA AO VIVO';
+                badge.className = 'text-emerald-400 font-bold animate-pulse';
+
+                showToast('Webcam ativada com sucesso!', 'success');
+            } catch (err) {
+                console.error('Erro ao acessar webcam:', err);
+                badge.innerText = '● ERRO DE CÂMERA';
+                badge.className = 'text-rose-400 font-bold';
+                showToast('Não foi possível acessar a câmera. Tente carregar uma foto por arquivo.', 'warning');
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('photo-canvas');
+            const preview = document.getElementById('photo-preview');
+            const placeholder = document.getElementById('webcam-placeholder');
+
+            if (video.classList.contains('hidden') || !webcamStream) {
+                showToast('Por favor, ative a câmera primeiro!', 'warning');
+                return;
+            }
+
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            preview.src = dataUrl;
+            preview.classList.remove('hidden');
+            video.classList.add('hidden');
+            placeholder.classList.add('hidden');
+
+            showToast('Biometria facial capturada com sucesso!', 'success');
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photo-preview');
+                const video = document.getElementById('webcam-video');
+                const placeholder = document.getElementById('webcam-placeholder');
+
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                video.classList.add('hidden');
+                placeholder.classList.add('hidden');
+
+                showToast('Foto carregada do arquivo com sucesso!', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* LocalStorage para Pessoas Cadastradas */
+        let cadastradosPF = JSON.parse(localStorage.getItem('smarttraffic_pf')) || [
+            {
+                nome: 'Dra. Ana Gonçalves',
+                cpf: '123.456.789-00',
+                categoria: 'Pessoa com Deficiência / Cadeirante',
+                foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80'
+            },
+            {
+                nome: 'Sr. João Batista Silva',
+                cpf: '987.654.321-11',
+                categoria: 'Idoso (60+ anos)',
+                foto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80'
+            }
+        ];
+
+        function renderCadastradosPF(lista = cadastradosPF) {
+            const tbody = document.getElementById('lista-pf-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500 text-xs">Nenhum cadastro encontrado.</td></tr>`;
+                return;
+            }
+
+            lista.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40 transition-colors';
+               
+                const fotoSrc = item.foto || 'https://placehold.co/100x100/0f172a/06b6d4?text=USER';
+
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <img src="${fotoSrc}" class="w-9 h-9 rounded-full object-cover border border-cyan-500/40" alt="Foto">
+                    </td>
+                    <td class="p-3 font-semibold text-white">${item.nome}</td>
+                    <td class="p-3 font-mono text-xs text-slate-400">${item.cpf}</td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${getCategoriaBadgeClass(item.categoria)}">
+                            ${item.categoria}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <button onclick="removerCadastrado(${index})" class="text-rose-400 hover:text-rose-300 text-xs p-1">
+                            <i class="fa-solid fa-trash-can"></i> Excluir
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getCategoriaBadgeClass(cat) {
+            if (cat.includes('Cadeirante') || cat.includes('Deficiência')) return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+            if (cat.includes('Idoso')) return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+            if (cat.includes('Visual')) return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+            if (cat.includes('Emergência')) return 'bg-red-500/20 text-red-300 border border-red-500/30';
+            return 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+        }
+
+        function salvarPessoaFisica(e) {
+            e.preventDefault();
+            const nome = document.getElementById('pf-nome').value;
+            const cpf = document.getElementById('pf-cpf').value;
+            const categoria = document.getElementById('pf-categoria').value;
+            const previewPhoto = document.getElementById('photo-preview');
+
+            const fotoData = previewPhoto.classList.contains('hidden') ? null : previewPhoto.src;
+
+            cadastradosPF.unshift({
+                nome: nome,
+                cpf: cpf,
+                categoria: categoria,
+                foto: fotoData
+            });
+
+            localStorage.setItem('smarttraffic_pf', JSON.stringify(cadastradosPF));
+            renderCadastradosPF();
+
+            document.getElementById('form-cadastro-pf').reset();
+            showToast(`Cidadão ${nome} cadastrado na rede com sucesso!`, 'success');
+        }
+
+        function removerCadastrado(index) {
+            cadastradosPF.splice(index, 1);
+            localStorage.setItem('smarttraffic_pf', JSON.stringify(cadastradosPF));
+            renderCadastradosPF();
+            showToast('Cadastro removido.', 'info');
+        }
+
+        function filtrarCadastrados() {
+            const query = document.getElementById('filter-input').value.toLowerCase();
+            const filtrados = cadastradosPF.filter(item =>
+                item.nome.toLowerCase().includes(query) || item.cpf.includes(query)
+            );
+            renderCadastradosPF(filtrados);
+        }
+
+        /* ==========================================================================
+           5. CANVAS DA FAIXA DE PEDESTRE E ALGORITMO ADAPTATIVO
+           ========================================================================== */
+        let crosswalkPedestrians = [];
+        let crosswalkTimerValue = 15;
+        let isPriorityActive = false;
+
+        function initCrosswalkCanvas() {
+            const canvas = document.getElementById('crosswalk-canvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth || 700;
+            canvas.height = canvas.parentElement.clientHeight || 360;
+
+            function drawLoop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Desenha o asfalto
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Desenha a faixa de pedestre (listras brancas)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                const stripeWidth = 28;
+                const gap = 18;
+                for (let x = 40; x < canvas.width - 40; x += stripeWidth + gap) {
+                    ctx.fillRect(x, 80, stripeWidth, 200);
+                }
+
+                // Desenha linha de retenção dos carros
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(0, 60, canvas.width, 6);
+                ctx.fillRect(0, 294, canvas.width, 6);
+
+                // Atualiza e desenha pedestres com Bounding Boxes estilo IA
+                crosswalkPedestrians.forEach((ped, idx) => {
+                    // Animação de caminhada lateral
+                    ped.x += ped.speed;
+                    if (ped.x > canvas.width - 50) ped.x = 40;
+
+                    // Desenha ícone
+                    ctx.font = '24px "Font Awesome 6 Free"';
+                    ctx.fillStyle = ped.color;
+                    ctx.fillText(ped.icon, ped.x, ped.y + 20);
+
+                    // Desenha Bounding Box do Detector YOLO
+                    ctx.strokeStyle = ped.color;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ped.x - 10, ped.y - 10, 45, 45);
+
+                    // Rótulo da Caixa
+                    ctx.fillStyle = ped.color;
+                    ctx.fillRect(ped.x - 10, ped.y - 28, 120, 16);
+
+                    ctx.fillStyle = '#070a11';
+                    ctx.font = 'bold 9px monospace';
+                    ctx.fillText(`${ped.tipo} [${ped.confidence}%]`, ped.x - 6, ped.y - 16);
+                });
+
+                requestAnimationFrame(drawLoop);
+            }
+
+            drawLoop();
+        }
+
+        // Loop do Temporizador da Faixa
+        setInterval(() => {
+            const timerEl = document.getElementById('crosswalk-timer');
+            if (!timerEl) return;
+
+            crosswalkTimerValue--;
+            timerEl.innerText = `${crosswalkTimerValue}s`;
+
+            if (crosswalkTimerValue <= 0) {
+                // Reset do temporizador
+                crosswalkTimerValue = isPriorityActive ? 30 : 15;
+            }
+        }, 1000);
+
+        function injectPedestrian(tipo) {
+            const canvas = document.getElementById('crosswalk-canvas');
+            const width = canvas ? canvas.width : 600;
+
+            let icon = '🚶';
+            let color = '#06b6d4';
+            let priorityText = 'Normal';
+            let isPriority = false;
+
+            if (tipo === 'IDOSO') {
+                icon = '👨‍🦳';
+                color = '#f59e0b';
+                priorityText = 'Prioridade ALTA';
+                isPriority = true;
+            } else if (tipo === 'CADEIRANTE') {
+                icon = '🧑‍🦽';
+                color = '#ef4444';
+                priorityText = 'Prioridade MÁXIMA';
+                isPriority = true;
+            } else if (tipo === 'CEGO') {
+                icon = '👨‍🦯';
+                color = '#a855f7';
+                priorityText = 'Prioridade MÁXIMA';
+                isPriority = true;
+            }
+
+            crosswalkPedestrians.push({
+                x: 50 + Math.random() * (width - 150),
+                y: 120 + Math.random() * 120,
+                speed: 0.5 + Math.random() * 0.5,
+                tipo: tipo,
+                confidence: (97 + Math.random() * 2.8).toFixed(1),
+                icon: icon,
+                color: color
+            });
+
+            document.getElementById('detection-count-badge').innerText = `${crosswalkPedestrians.length} DETECÇÕES`;
+
+            // Ativa algoritmo adaptativo se for de prioridade
+            if (isPriority) {
+                triggerAdaptiveAlgorithm(tipo, priorityText);
+            }
+
+            logCrosswalkEvent(`Pedestre detectado: ${tipo} na faixa. Bounding box ativa.`);
+        }
+
+        function triggerAdaptiveAlgorithm(tipo, priorityText) {
+            isPriorityActive = true;
+            crosswalkTimerValue = 35; // Estende o tempo de verde dos pedestres
+
+            const banner = document.getElementById('crosswalk-alert-banner');
+            const alertText = document.getElementById('crosswalk-alert-text');
+            const carStatus = document.getElementById('ped-car-status');
+            const userStatus = document.getElementById('ped-user-status');
+
+            if (banner) {
+                banner.classList.remove('hidden');
+                alertText.innerText = `IA DETECTOU ${tipo} (${priorityText})! RETENDO VEÍCULOS E EXTENDENDO TEMPO DE TRAVESSIA PARA 35S!`;
+            }
+
+            if (carStatus) carStatus.innerText = 'RETENÇÃO DE EMERGÊNCIA (VERMELHO)';
+            if (userStatus) userStatus.innerText = 'TRAVESSIA SEGURA EXTENDIDA';
+
+            showToast(`🚨 Sinal estendido em +20s para atender ${tipo}!`, 'emergency');
+
+            setTimeout(() => {
+                if (banner) banner.classList.add('hidden');
+                isPriorityActive = false;
+            }, 8000);
+        }
+
+        function clearCrosswalk() {
+            crosswalkPedestrians = [];
+            document.getElementById('detection-count-badge').innerText = `0 DETECÇÕES`;
+            document.getElementById('crosswalk-alert-banner').classList.add('hidden');
+            logCrosswalkEvent('Faixa liberada e limpa.');
+        }
+
+        function logCrosswalkEvent(msg) {
+            const container = document.getElementById('crosswalk-log-container');
+            if (!container) return;
+            const time = new Date().toLocaleTimeString();
+            const p = document.createElement('p');
+            p.className = 'text-amber-300';
+            p.innerText = `> [${time}] ${msg}`;
+            container.prepend(p);
+        }
+
+        /* ==========================================================================
+           6. FEEDBACK DOS CIDADÃOS COM ARMAZENAMENTO E UPVOTES
+           ========================================================================== */
+        let feedbackList = JSON.parse(localStorage.getItem('smarttraffic_feedback')) || [
+            {
+                id: 1,
+                nome: 'Carlos Eduardo',
+                local: 'Av. Paulista x Rebouças',
+                categoria: 'Elogio',
+                rating: 5,
+                comentario: 'O semáforo identificou minha mãe de 74 anos atravessando e aumentou o tempo verde automaticamente. Excelente iniciativa de acessibilidade!',
+                upvotes: 18,
+                data: 'Há 20 minutos'
+            },
+            {
+                id: 2,
+                nome: 'Mariana P.',
+                local: 'Rua Consolação 1200',
+                categoria: 'Sugestão de Tempo',
+                rating: 4,
+                comentario: 'A travessia na Consolação melhorou muito, mas sugiro colocar um aviso sonoro um pouco mais alto para deficientes visuais no horário de pico.',
+                upvotes: 9,
+                data: 'Há 2 horas'
+            }
+        ];
+
+        function setRating(val) {
+            currentRating = val;
+            const stars = document.getElementById('star-rating-container').children;
+            for (let i = 0; i < stars.length; i++) {
+                if (i < val) {
+                    stars[i].className = 'fa-solid fa-star cursor-pointer text-amber-400 transition-colors';
+                } else {
+                    stars[i].className = 'fa-solid fa-star cursor-pointer text-slate-700 transition-colors';
+                }
+            }
+        }
+
+        function renderFeedbacks() {
+            const container = document.getElementById('feedback-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const filtrados = activeFeedbackCategory === 'TODOS'
+                ? feedbackList
+                : feedbackList.filter(f => f.categoria === activeFeedbackCategory);
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs font-mono">Nenhum feedback nesta categoria.</div>`;
+                return;
+            }
+
+            filtrados.forEach((fb, index) => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-5 rounded-2xl border border-slate-800 space-y-3';
+               
+                let starsHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    starsHTML += `<i class="fa-solid fa-star ${i < fb.rating ? 'text-amber-400' : 'text-slate-700'} text-xs"></i>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-white text-sm">${fb.nome}</h4>
+                            <span class="text-xs text-slate-400"><i class="fa-solid fa-location-dot text-purple-400 mr-1"></i>${fb.local}</span>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${getFeedbackCatClass(fb.categoria)}">
+                            ${fb.categoria}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-1">${starsHTML}</div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed">${fb.comentario}</p>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+                        <span class="text-[10px] font-mono text-slate-500">${fb.data}</span>
+                        <button onclick="upvoteFeedback(${fb.id})" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-300 font-semibold text-xs flex items-center gap-1.5 transition-all">
+                            <i class="fa-solid fa-thumbs-up"></i>
+                            <span>${fb.upvotes}</span>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function getFeedbackCatClass(cat) {
+            if (cat === 'Elogio') return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+            if (cat === 'Sugestão de Tempo') return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+            return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+        }
+
+        function upvoteFeedback(id) {
+            const item = feedbackList.find(f => f.id === id);
+            if (item) {
+                item.upvotes++;
+                localStorage.setItem('smarttraffic_feedback', JSON.stringify(feedbackList));
+                renderFeedbacks();
+                showToast('Obrigado pelo seu voto!', 'success');
+            }
+        }
+
+        function filtrarFeedbackCat(cat) {
+            activeFeedbackCategory = cat;
+            renderFeedbacks();
+        }
+
+        function salvarFeedback(e) {
+            e.preventDefault();
+            const nome = document.getElementById('fb-nome').value;
+            const local = document.getElementById('fb-local').value;
+            const categoria = document.getElementById('fb-categoria').value;
+            const comentario = document.getElementById('fb-comentario').value;
+
+            feedbackList.unshift({
+                id: Date.now(),
+                nome: nome,
+                local: local,
+                categoria: categoria,
+                rating: currentRating,
+                comentario: comentario,
+                upvotes: 1,
+                data: 'Agora mesmo'
+            });
+
+            localStorage.setItem('smarttraffic_feedback', JSON.stringify(feedbackList));
+            renderFeedbacks();
+
+            document.getElementById('form-feedback').reset();
+            setRating(5);
+            showToast('Sua avaliação foi publicada com sucesso!', 'success');
+        }
+
+        /* ==========================================================================
+           7. CONTATO
+           ========================================================================== */
+        function enviarContato(e) {
+            e.preventDefault();
+            e.target.reset();
+            showToast('Mensagem institucional enviada para a equipe de engenharia!', 'success');
+        }
+
+        /* ==========================================================================
+           INICIALIZAÇÃO AO CARREGAR PÁGINA
+           ========================================================================== */
+        window.onload = function() {
+            renderCadastradosPF();
+            renderFeedbacks();
+            setRating(5);
+            updateHomeSimVisuals();
+        };
+    </script>
+</body>
+</html>
+
