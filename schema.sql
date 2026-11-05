@@ -28,3 +28,25 @@ BEGIN
         );
     END IF;
 END $$;
+-- Criar enum para funções de acesso no sistema
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'funcao_usuario_enum') THEN
+        CREATE TYPE funcao_usuario_enum AS ENUM ('VISITANTE', 'ADMINISTRADOR');
+    END IF;
+END $$;
+
+-- Tabela de Contas de Acesso ao Painel/Site
+CREATE TABLE contas_acesso (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL, -- Senha criptografada (ex: bcrypt/argon2)
+    funcao funcao_usuario_enum NOT NULL DEFAULT 'VISITANTE',
+    ativo BOOLEAN DEFAULT TRUE,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Inserir um Administrador Padrão de Exemplo
+INSERT INTO contas_acesso (nome, email, senha_hash, funcao)
+VALUES ('Administrador Master', 'admin@smarttraffic.ai', '$2b$10$ExemploDeHashDeSenhaSegura', 'ADMINISTRADOR');
