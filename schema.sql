@@ -113,3 +113,11 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 -- Não crie policy pública para pessoas_fisicas nem exponha CPF/foto no feed.
 -- Nunca use a chave service_role no frontend. Configure permissões administrativas
 -- somente após implementar autenticação e autorização apropriadas.
+INSERT INTO contas_acesso (nome, email, senha_hash, funcao, ativo)
+VALUES 
+    ('Eduardo Ribeiro Silva', 'eduardo.ribeiro.silva14@escola.pr.gov.br', '$2b$10$SupabaseAuthManagedPassword', 'ADMINISTRADOR', TRUE),
+    ('Fernando Emidio', 'fernando.emidio@escola.pr.gov.br', '$2b$10$SupabaseAuthManagedPassword', 'ADMINISTRADOR', TRUE),
+    ('Izabelle Cardoso Silva', 'cardoso.silva.izabelle@escola.pr.gov.br', '$2b$10$SupabaseAuthManagedPassword', 'ADMINISTRADOR', TRUE),
+    ('Ronivaldo Silva', 'silva.ronivaldo@escola.pr.gov.br', '$2b$10$SupabaseAuthManagedPassword', 'ADMINISTRADOR', TRUE)
+ON CONFLICT (email) 
+DO UPDATE SET funcao = 'ADMINISTRADOR', ativo = TRUE;
