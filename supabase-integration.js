@@ -1,16 +1,7 @@
-/*
- * Integração do SmartTraffic AI com Supabase.
- * Carregue este arquivo depois do script principal do index.html:
- * <script src="supabase-integration.js"></script>
- *
- * Usa somente URL e chave publicável (seguras para o navegador, com RLS).
- * Não coloque chaves sb_secret/service_role neste arquivo.
- */
 (() => {
     'use strict';
 
     const SUPABASE_URL = 'https://kvbrrczjyoawojhjewbs.supabase.co';
-    // Chave publishable fornecida pelo proprietário do projeto.
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_RQx-5MMwnVUVZazi4H0ATw_lDNJgSB_';
     const CDN_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 
@@ -38,6 +29,59 @@
         } else {
             window.alert(message);
         }
+    }
+
+    function setAdminViewState(isLoggedIn) {
+        const modal = document.getElementById('admin-login-modal');
+        const adminStatus = document.getElementById('admin-status-label');
+        const adminUserEmail = document.getElementById('admin-user-email');
+        const trigger = document.getElementById('admin-login-trigger');
+        const logoutBtn = document.getElementById('logout-admin');
+
+        if (modal) {
+            modal.classList.toggle('hidden', isLoggedIn);
+        }
+
+        if (adminStatus) {
+            adminStatus.textContent = isLoggedIn ? 'Acesso autorizado' : 'Acesso restrito';
+        }
+
+        if (adminUserEmail) {
+            adminUserEmail.textContent = isLoggedIn
+                ? 'Sessão ativa para administração.'
+                : 'Faça login para visualizar o painel administrativo.';
+        }
+
+        if (trigger) {
+            trigger.textContent = isLoggedIn ? 'Painel admin' : 'Entrar no painel';
+        }
+
+        if (logoutBtn) {
+            logoutBtn.classList.toggle('hidden', !isLoggedIn);
+        }
+    }
+
+    async function validarPerfilAdmin(userEmail) {
+        const { data, error } = await client
+            .from('contas_acesso')
+            .select('nome, funcao')
+            .eq('email', userEmail)
+            .maybeSingle();
+
+        if (error) throw error;
+        if (!data || data.funcao !== 'ADMINISTRADOR') return null;
+        return data;
+    }
+
+    async function refreshFeedback() {
+        const { data, error } = await client
+            .from('feedbacks')
+            .select('id,nome,localizacao,categoria,nota,comentario,created_at')
+            .order('created_at', { ascending: false })
+            .limit(100);
+        if (error) throw error;
+        feedbackRows = data || [];
+        renderFeedback();
     }
 
     function renderFeedback() {
@@ -80,17 +124,6 @@
             card.append(heading, details, comment);
             container.appendChild(card);
         });
-    }
-
-    async function refreshFeedback() {
-        const { data, error } = await client
-            .from('feedbacks')
-            .select('id,nome,localizacao,categoria,nota,comentario,created_at')
-            .order('created_at', { ascending: false })
-            .limit(100);
-        if (error) throw error;
-        feedbackRows = data || [];
-        renderFeedback();
     }
 
     async function saveFeedback(event) {
@@ -147,6 +180,136 @@
         }
     }
 
+    async function realizarLoginAdmin(event) {
+        event.preventDefault();
+
+        const form = event.currentTarget;
+        const email = document.getElementById('admin-email')?.value?.trim();
+        const password = document.getElementById('admin-password')?.value;
+
+        if (!email || !password) {
+            showMessage('Preencha e-mail e senha do administrador.', 'warning');
+            return;
+        }
+
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
+        if (error) {
+            showMessage('Erro ao fazer login: ' + error.message, 'warning');
+            return;
+        }
+
+        const perfil = await validarPerfilAdmin(data.user.email);
+        if (!perfil) {
+            showMessage('Acesso negado: perfil sem permissão administrativa.', 'warning');
+            await client.auth.signOut();
+            return;
+        }
+
+        const adminUserLabel = document.getElementById('admin-user-email');
+        if (adminUserLabel) {
+            adminUserLabel.textContent = `${perfil.nome} • ${data.user.email}`;
+        }
+
+        const adminStatusLabel = document.getElementById('admin-status-label');
+        if (adminStatusLabel) {
+            adminStatusLabel.textContent = 'Acesso autorizado';
+        }
+
+        form.reset();
+        setAdminViewState(true);
+
+        if (typeof window.navigateTo === 'function') {
+            window.navigateTo('admin');
+        }
+
+        showMessage('Login efetuado com sucesso! Bem-vindo ao painel.', 'success');
+    }
+
+    async function logoutAdmin() {
+        if (!client) return;
+        const { error } = await client.auth.signOut();
+        if (error) {
+            showMessage('Erro ao sair: ' + error.message, 'warning');
+            return;
+        }
+        setAdminViewState(false);
+        if (typeof window.navigateTo === 'function') {
+            window.navigateTo('home');
+        }
+        showMessage('Sessão encerrada com sucesso.', 'success');
+    }
+
+    async function verificarSessaoAdmin() {
+        if (!client) return;
+        const { data: { user }, error } = await client.auth.getUser();
+        if (error || !user) {
+            setAdminViewState(false);
+            return;
+        }
+
+        try {
+            const perfil = await validarPerfilAdmin(user.email);
+            if (!perfil) {
+                await client.auth.signOut();
+                setAdminViewState(false);
+                return;
+            }
+
+            const adminUserLabel = document.getElementById('admin-user-email');
+            if (adminUserLabel) {
+                adminUserLabel.textContent = `${perfil.nome} • ${user.email}`;
+            }
+
+            setAdminViewState(true);
+        } catch (err) {
+            console.error('Erro ao validar sessão administrativa:', err);
+            setAdminViewState(false);
+        }
+    }
+
+    function bindAdminUI() {
+        const loginForm = document.getElementById('form-login-admin');
+        if (loginForm) {
+            loginForm.onsubmit = realizarLoginAdmin;
+        }
+
+        const loginTrigger = document.getElementById('admin-login-trigger');
+        if (loginTrigger) {
+            loginTrigger.addEventListener('click', () => {
+                const modal = document.getElementById('admin-login-modal');
+                if (modal) modal.classList.remove('hidden');
+            });
+        }
+
+        const closeBtn = document.getElementById('admin-login-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                const modal = document.getElementById('admin-login-modal');
+                if (modal) modal.classList.add('hidden');
+            });
+        }
+
+        const logoutBtn = document.getElementById('logout-admin');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logoutAdmin);
+        }
+
+        window.exibirPainelAdmin = () => {
+            if (typeof window.navigateTo === 'function') {
+                window.navigateTo('admin');
+            }
+            const panel = document.getElementById('view-admin');
+            if (panel) panel.classList.remove('hidden');
+            setAdminViewState(true);
+        };
+
+        window.ocultarPainelAdmin = () => {
+            const panel = document.getElementById('view-admin');
+            if (panel) panel.classList.add('hidden');
+            setAdminViewState(false);
+        };
+    }
+
     function installHandlers() {
         const feedbackForm = document.getElementById('form-feedback');
         if (feedbackForm) feedbackForm.onsubmit = saveFeedback;
@@ -154,7 +317,6 @@
         const contactForm = document.getElementById('form-contato');
         if (contactForm) contactForm.onsubmit = saveContact;
 
-        // Não enviar CPF, nascimento ou imagem biométrica anonimamente ao banco.
         const personForm = document.getElementById('form-cadastro-pf');
         if (personForm) {
             personForm.onsubmit = event => {
@@ -162,6 +324,8 @@
                 showMessage('O cadastro com CPF e biometria está desativado até configurar autenticação e um backend seguro.', 'warning');
             };
         }
+
+        bindAdminUI();
 
         window.filtrarFeedbackCat = category => {
             selectedCategory = category;
@@ -175,6 +339,7 @@
             client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
             installHandlers();
             await refreshFeedback();
+            await verificarSessaoAdmin();
         } catch (error) {
             console.error('Não foi possível iniciar a integração Supabase:', error);
             showMessage('Supabase indisponível. Confirme conexão e configuração do projeto.', 'warning');
